@@ -19,31 +19,38 @@ public class DuplicateContactFinder {
 	}
     
     public List<Coincidence> findDuplicates(){
-    	return findDuplicatesInList(this.contactsRepository.getAll());
+    	List<Contact> contactsList = this.contactsRepository.getAll();
+    	return findDuplicatesInList(contactsList);
     }
     
     private List<Coincidence> findDuplicatesInList(List<Contact> contacts) {
         List <Coincidence> coincidences = new ArrayList<>();
 
         for (Contact c1 : contacts) {
-        	System.out.println("Contacto: " + c1);
             for (Contact c2 : contacts) {
                 if (!c1.equals(c2)) {
-                    double score = compute(c1.firstName(), c2.firstName()); 
-                    score += compute(c1.lastName(), c2.lastName()); 
-                    score += compute(c1.email(),  c2.email()); 
-                    score = score/3;
-                    
-                    Precision precision = getPrecision(score);
-                    
+                    Precision precision = calculateCoincidencePrecision(c1, c2);
                     if(precision != Precision.VERY_LOW) {
-                    	System.out.println("------>Posible coincidencia: " + c2);
                     	coincidences.add(new Coincidence(c1.contactId(), c2.contactId(), precision));
                     }
                 }
             }
         }
         return coincidences;
+    }
+    
+    Precision calculateCoincidencePrecision(Contact c1, Contact c2) {
+    	double score = compute(c1.firstName(), c2.firstName()); 
+        score += compute(c1.lastName(), c2.lastName()); 
+        score += compute(c1.email(),  c2.email()); 
+        score = score/3;
+        return getPrecision(score);
+    }
+    
+    private double compute(String s1, String s2) {
+        int maxLength = Math.max(s1.length(), s2.length());
+        int distance = levenshtein.apply(s1, s2);
+        return 1.0 - ((double) distance / maxLength); // 1.0 = identical, 0.0 = completely different
     }
     
     private Precision getPrecision(double score) {
@@ -56,12 +63,6 @@ public class DuplicateContactFinder {
         }else{
         	return Precision.HIGH;
         }
-    }
-    
-    private double compute(String s1, String s2) {
-        int maxLength = Math.max(s1.length(), s2.length());
-        int distance = levenshtein.apply(s1, s2);
-        return 1.0 - ((double) distance / maxLength); // 1.0 = identical, 0.0 = completely different
     }
 
     
