@@ -2,33 +2,43 @@ package com.javago.reader;
 
 import org.apache.commons.text.similarity.LevenshteinDistance;
 
+import com.javago.reader.model.Coincidence;
+import com.javago.reader.model.Contact;
+import com.javago.reader.model.Precision;
+
 import java.util.*;
 
 public class DuplicateContactFinder {
 	
 	private final ContactsRepository contactsRepository;
 	
+    private final LevenshteinDistance levenshtein = new LevenshteinDistance();
+	
 	public DuplicateContactFinder(ContactsRepository contactsRepository) {
 		this.contactsRepository = contactsRepository;
 	}
-
-    private static LevenshteinDistance levenshtein = new LevenshteinDistance();
     
-    public static List<Coincidence> findDuplicates(List<Contact> contacts) {
+    public List<Coincidence> findDuplicates(){
+    	return findDuplicatesInList(this.contactsRepository.getAll());
+    }
+    
+    private List<Coincidence> findDuplicatesInList(List<Contact> contacts) {
         List <Coincidence> coincidences = new ArrayList<>();
 
         for (Contact c1 : contacts) {
-            List<String> potentialMatches = new ArrayList<>();
+        	System.out.println("Contacto: " + c1);
             for (Contact c2 : contacts) {
                 if (!c1.equals(c2)) {
                     double score = compute(c1.firstName(), c2.firstName()); 
                     score += compute(c1.lastName(), c2.lastName()); 
                     score += compute(c1.email(),  c2.email()); 
                     score = score/3;
-                    if (score > 0.5 && score <= 0.66) {
-                        potentialMatches.add(c2.toString() + " (Score: " + score + ")");
-                    }else if(score > 0.66 && score <= 0.82) {
-                    	
+                    
+                    Precision precision = getPrecision(score);
+                    
+                    if(precision != Precision.VERY_LOW) {
+                    	System.out.println("------>Posible coincidencia: " + c2);
+                    	coincidences.add(new Coincidence(c1.contactId(), c2.contactId(), precision));
                     }
                 }
             }
@@ -36,7 +46,19 @@ public class DuplicateContactFinder {
         return coincidences;
     }
     
-    private static double compute(String s1, String s2) {
+    private Precision getPrecision(double score) {
+    	if(score <= 0.5)
+    		return Precision.VERY_LOW;
+    	else if (score <= 0.66) {
+        	return Precision.LOW;
+        }else if(score <= 0.82) {
+        	return Precision.MIDDLE;
+        }else{
+        	return Precision.HIGH;
+        }
+    }
+    
+    private double compute(String s1, String s2) {
         int maxLength = Math.max(s1.length(), s2.length());
         int distance = levenshtein.apply(s1, s2);
         return 1.0 - ((double) distance / maxLength); // 1.0 = identical, 0.0 = completely different

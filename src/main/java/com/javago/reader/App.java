@@ -1,7 +1,10 @@
 package com.javago.reader;
 
 import java.util.List;
-import java.util.Map;
+
+import com.javago.reader.data.ExcelCoincidencesWriter;
+import com.javago.reader.data.ExcelContactsReader;
+import com.javago.reader.model.Coincidence;
 
 /**
  * Hello world!
@@ -10,9 +13,10 @@ import java.util.Map;
 public class App 
 {
 	public static void main(String[] args) {
-        String filePath = "contacts.xlsx"; // 📌 Archivo de entrada
-        List<Contact> contacts = ExcelReader.readContacts(filePath);
-        List<Coincidence> duplicates = DuplicateContactFinder.findDuplicates(contacts);
+		
+		DuplicateContactFinder contactsFinder = new DuplicateContactFinder(new ExcelContactsReader());
+        List<Coincidence> duplicates = contactsFinder.findDuplicates();
+        ExcelCoincidencesWriter.writeToExcel("coincidences.xlsx", duplicates);
 
         
     }

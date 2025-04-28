@@ -1,6 +1,7 @@
-package com.javago.reader;
+package com.javago.reader.model;
 
 public enum Precision {
+	VERY_LOW("Muy baja"),
 	LOW("Baja"),
 	MIDDLE("Media"),
 	HIGH("Alta"),
